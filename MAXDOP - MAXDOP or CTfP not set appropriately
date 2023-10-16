@@ -1,0 +1,81 @@
+1. Background and why this is important:
+Both of these configurations are related to query parralelism for a SQL server.
+
+MAXDOP - When SQL Server runs on a computer with more than one processor, the engine will determine the number of processors needed to be employed to run that statement. This is known as the degree of parallelism (DOP). The max degree of parallelism (MAXDOP) option is there to limit the number of processors used for parallel plan executions and to prevent queries from running-away and impacting SQL Server performance by using all available CPUs.
+
+The value at which Microsoft recommends MAXDOP is set to depends on the number of CPUs / NUMA nodes the server has (Script to get this value is set below). Often this will raise on a newly installed instance of SQL or if the underlying CPU has been upgraded / downgraded recently without MAXDOP beening adjusted.
+
+CTfP - The cost threshold for parallelism option (CTfP) specifies the threshold at which SQL Server will run with a parallel plan for a query. SQL Server will run a parallel plan for a query only when the estimated cost to run that query is higher than the value set in cost threshold for parallelism.
+
+The 'cost' value is a Microsoft estimated cost required to run the serial plan on a specific hardware configuration - a MS developer's PC. It is not in any real unit.
+
+The default value for CTfP is 5 (super low) and this was set as the default way back in 1998 and hasn't changed since. With modern hardware; this is generally not appropriate as queries will be forced to run in parallel without there being any performance benefit. A better modern day default value is widely considered to be 50.
+
+2. To resolve:
+The following script will generate the appropriate TSQL script to change these values to those that Microsoft recommend. Note: these are advanced options (so you may need to run EXEC sp_configure 'show advanced option', '1'; first. Also you will need to run reconfigure after running these to confirm the changes made.)
+
+A restart isnt required to make these changes but there could be a potentially performance impact after these settings are configured.
+
+Things to be aware of:
+
+-- If a customer doesnt have CTfP configured to be 5 (default) and it is something else; they may have run tests on their workload and choosen a value historically. If this is the case, check with the customer if they have and dont proceed with changing this if they have as it could cause a negative impact to performance.
+
+-- If there are multiple instances of SQL on any server; the MAXDOP value may need to be lower as to not cause contention.
+
+DECLARE @maxdop_cpu_count smallint;
+DECLARE @maxdop smallint;
+DECLARE @ctfp smallint;
+
+SELECT @maxdop_cpu_count = cpu_count
+FROM sys.dm_os_sys_info;
+
+SELECT @maxdop = CONVERT(smallint, value_in_use)
+FROM sys.configurations
+WHERE name = 'max degree of parallelism';
+
+SELECT @ctfp = CONVERT(smallint, value_in_use)
+FROM sys.configurations
+WHERE name = 'cost threshold for parallelism';
+
+-- Set MAXDOP
+IF (@maxdop_cpu_count > 8 AND @maxdop <> 8)  -- If >8 CPUs, MAXDOP should be 8
+	OR (@maxdop_cpu_count <= 8 AND @maxdop NOT IN (0, @maxdop_cpu_count))  -- Up to 8 CPUs, MAXDOP should be equal to CPUs or 0
+BEGIN
+	SELECT 'sp_config', 'EXEC sp_configure ''max degree of parallelism'', ' + CASE WHEN @maxdop_cpu_count > 8 THEN '8' ELSE CONVERT(varchar(10), @maxdop_cpu_count) END;
+END;
+
+-- Set CTfP
+IF @ctfp = 5
+BEGIN
+	SELECT 'sp_config', 'EXEC sp_configure ''cost threshold for parallelism'', 50';
+END;
+
+EXEC sp_configure 'cost threshold for parallelism', 50
+3. Email Template
+Hi All,
+
+As part of our ongoing COaaS checks; it has been flagged that the MAXDOP / CTfP configurations are not in line with Microsofts best practice recommendations.
+
+-- CTfP Context (If Appropriate)
+
+The cost threshold for parallelism option (CTfP) specifies the threshold at which SQL Server will run with a parallel plan for a query. SQL Server will run a parallel plan for a query only when the estimated cost to run that query is higher than the value set in cost threshold for parallelism. The default value (5) is widely considered too low and forces queries to run in parrallel without there being any real performance benefit to doing this. A better value would be considered 50.
+
+-- MAXDOP Context (If Appropriate)
+
+When SQL Server runs on a computer with more than one processor, the engine will determine the number of processors needed to be employed to run that statement. This is known as the degree of parallelism (DOP). The max degree of parallelism (MAXDOP) option is there to limit the number of processors used for parallel plan executions and to prevent queries from running-away and impacting SQL Server performance by using all available CPUs. Having this configured too high can lead to this, whilst too low, we may not be using as much of the CPU power that we could.
+
+The value at which Microsoft recommends MAXDOP is set to depends on the number of CPUs / NUMA nodes on the server (https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/configure-the-max-degree-of-parallelism-server-configuration-option?view=sql-server-ver16 ).
+
+Please find below the recommendations we wish to change:
+
+/*
+
+List of values to change
+
+*/
+
+Are we okay to proceed with changing these? This is a non-service affecting change (no restart is required) and we will closely monitor the servers performance after this change to ensure that there isnt a negative impact to performance.
+
+Please let us know if you have any questions or concerns.
+
+Kind regards,
