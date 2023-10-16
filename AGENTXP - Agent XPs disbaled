@@ -14,7 +14,7 @@ use master
 go
 select * from sys.configurations where name='Agent XPs'
 Update to Customer
-After our recent COaaS check we have noticed that the agent XPs option is disabled on the following instances:
+After our recent Exxon check we have noticed that the agent XPs option is disabled on the following instances:
 <instance>, <instance>...
 
 This means that the SQL Server Agent node is not available in SSMS. We'll enable this by <date about a week away> in order to help us more efficiently manage your estate.
