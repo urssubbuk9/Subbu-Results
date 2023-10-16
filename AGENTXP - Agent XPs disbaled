@@ -1,0 +1,35 @@
+Context
+Agent XPs allows the specific extended stored procedure that is used by SQL Server Agent services, to create maintenance plans and SQL jobs.
+
+Two possible values of the Agent XPs configuration parameter are as following:
+
+Zero (0): Agent XPs are disabled
+One (1): Agent XPs is enabled
+
+When this option is not enabled, the SQL Server Agent node is not available in SQL Server Management Studio Object Explorer.
+
+To check the value:
+
+use master
+go
+select * from sys.configurations where name='Agent XPs'
+Update to Customer
+After our recent COaaS check we have noticed that the agent XPs option is disabled on the following instances:
+<instance>, <instance>...
+
+This means that the SQL Server Agent node is not available in SSMS. We'll enable this by <date about a week away> in order to help us more efficiently manage your estate.
+This change will require no downtime.
+
+Please let us know if you wish us to cancel this work.
+
+Follow up
+To enable, run the following on the server in question
+
+sp_configure 'show advanced options', 1;  
+GO  
+RECONFIGURE;  
+GO  
+sp_configure 'Agent XPs', 1;  
+GO  
+RECONFIGURE  
+GO
