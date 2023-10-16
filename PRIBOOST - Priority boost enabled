@@ -1,0 +1,30 @@
+Context
+Priority boost is a "to be run only if Microsoft tells you to" setting that causes the SQL Server process to run as a high-priority process in Windows. This can cause all sorts of issues including, ironically, worse performance of SQL Server as it starves other processes on the server, including the OS itself.
+
+MS warns against using this especially if the instance is in a windows failover cluster.
+
+Initial email
+While performing our recent Exxon checks, we identified that the following instances of SQL Server are running with "priority boost" enabled.
+
+<<list of instances>>
+
+This is a configuration setting that should only be used under exceptional circumstances, such as if Microsoft is requesting it while troubleshooting an issue.
+
+We strongly recommend turning this off, as the side-effects of this can include server instability and crashes.
+
+Unless we hear otherwise, we will make this change on <<date/time>>; however, it won't take effect until the SQL Server instance is restarted (eg for patching).
+
+If you have any concerns or queries, or can tell us why this was set, please get in touch.
+
+Follow-up
+This is an advanced option, so...:
+
+-- if advanced options are not enabled:
+exec sp_configure 'show advanced options', 1;
+reconfigure;
+-- do the fix
+exec sp_configure 'priority boost', 0;
+reconfigure;
+-- if advanced options was already on, ignore this bit:
+exec sp_configure 'show advanced options', 0;
+reconfigure;
