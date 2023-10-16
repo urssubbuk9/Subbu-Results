@@ -1,0 +1,26 @@
+Context
+Starting with Windows Server 2008R2, windows will try to save power by 'scaling the processor performance based on current CPU utilisation'. A great idea in most cases, although it usually takes a short time for performance to upscale again, so in cases where the machine needs to be ready to respond to sudden load, or is under constant load, the delay in upscaling performance again can be problematic.
+
+Enter SQL Server, an application notorious for being sensitive to CPU performance, and prone to bursty, high-throughput, workload.
+
+TLDR: We never want SQL Server's CPU to be downscaled.
+
+Initial email
+During our recent Exxon check, we identified a number of Servers which are not using the 'High Performance' power plan. This means that these servers will have unpredictable performance degradation as the OS attempts to downscale CPU performance at unpredictable times.
+
+The following servers and instances are affected:
+<server> <instance>
+<server> <instance>, <instance>...
+
+As this is a P2 healthcheck item, we've scheduled an engineer to amend this setting on <date about a week away>. This will not cause any interruption or degradation of service.
+
+If you would like us to bring this work forward, or if this is a deliberate setting and you would like us to cancel the work and override this check, please reply to this thread.
+
+Making the change
+Old windows: Control Panel>Power and Sleep
+New windows: Settings>Power & sleep>Additional power settings
+
+In either case, find the power plan setting, and choose 'High Performance'.
+
+Reference
+Slow performance when using power plan 
